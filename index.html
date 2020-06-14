@@ -1,0 +1,139 @@
+<html>
+    <head>
+        <title>Survive!!</title>                
+    </head>
+    <style>
+        * { margin:0; padding:0; }
+        BODY { height:100%; width:100%; }
+        .canvasParent { position:relative; }
+        .canvasBG, .canvasFG { position:absolute; top:0; left:0; width:512px; height:512px; background-color:orange; }
+    </style>
+    <script>
+
+        class Obstacle {
+            constructor(imageName, x, y, h, w) {
+                this.x = x;
+                this.y = y;
+                this.h = h;
+                this.w = w;
+
+                var self = this;
+                var image = new Image();
+                image.onload = function() {
+                    var canvas = document.createElement("CANVAS");
+                    canvas.width = w;
+                    canvas.height = h;
+                    var ctx = canvas.getContext("2d");                      
+                    ctx.drawImage(this, 0, 0, w, h);
+                    var scaledImage = new Image();
+                    scaledImage.onload = function() {
+                        self.image = this;
+                    }
+                    scaledImage.src = canvas.toDataURL();
+                };
+                image.src = imageName;
+            }
+        }
+
+
+        var keyConsts = { left: 37, up: 38, right: 39, down: 40 };
+
+        var upPressed = false;
+        var downPressed = false;
+        var leftPressed = false;
+        var rightPressed = false;
+
+        function keyDownHandler(event) { keyHandler(event, true); }
+        function keyUpHandler(event) { keyHandler(event, false); }
+        function keyHandler(event, pressed) {
+            if (event.keyCode == keyConsts.up) {
+                upPressed = pressed;
+            } else if (event.keyCode == keyConsts.down) {
+                downPressed = pressed;
+            } else if (event.keyCode == keyConsts.left) {
+                leftPressed = pressed;
+            } else if (event.keyCode == keyConsts.right) {
+                rightPressed = pressed;
+            }
+
+            var msg = "";
+            msg += upPressed ? "u " : "";
+            msg += downPressed ? "d " : "";
+            msg += leftPressed ? "l " : "";
+            msg += rightPressed ? "r " : "";
+            console.log(msg);
+        }
+
+        var player = new Obstacle("blue bg.png", 0, 0, 32, 32);
+
+        var canvasCtx = null;
+        var canvas = null;
+
+        var obstacles = [];
+
+        function draw() {
+            var delta = 10;
+            player.y -= upPressed ? delta : 0;
+            player.y += downPressed ? delta : 0;
+            player.x -= leftPressed ? delta : 0;
+            player.x += rightPressed ? delta : 0;
+            canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
+            if (player.image != null) {
+                canvasCtx.drawImage(player.image, player.x, player.y);   
+            }
+            var index = 0;          
+            while (index < obstacles.length) {                
+                var o = obstacles[index];
+                if (hitBoxCheck(o)) {
+                    console.log("removing obstacle #" + index);
+                    obstacles.splice(index, 1);
+                    continue;
+                } 
+                if (o.image != null) {
+                    canvasCtx.drawImage(o.image, o.x, o.y); 
+                }
+                index += 1;
+            }   
+            setTimeout(draw, 16);        
+        }
+
+        function hitBoxCheck(o) {
+            if (o == null) {
+                return false;
+            }
+            
+            if (player.x < (o.x + o.w)
+                && (player.x + player.w) > o.x
+                && player.y < (o.y + o.h)
+                && (player.y + player.h) > o.y) {
+                    return true;
+            }
+            return false;
+        }
+
+        function setupObstacles() {
+            for (var i = 0; i < 10; i++) {
+                obstacles.push(new Obstacle("white bg.png", 100 * i, 100 * i, 12, 12));
+            }
+            console.log(obstacles);
+        }
+        
+        document.addEventListener('keydown', keyDownHandler, false);
+        document.addEventListener('keyup', keyUpHandler, false);
+
+        window.addEventListener('load', (event) => {            
+            canvas = document.getElementById("canvasBG");
+            setupObstacles();
+            canvas.width = 1024;
+            canvas.height = 1024;
+            canvasCtx = canvas.getContext("2d");  
+            draw();                                  
+        });
+    </script>
+    <body>
+        <div class='canvasParent'>
+            <canvas id='canvasBG' class='canvasBG' />
+            <canvas id='canvasFG' class='canvasFG' />
+        </div>
+    </body>
+</html>
